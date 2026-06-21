@@ -4,7 +4,19 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from datetime import datetime
 from app.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+def _normalize_db_url(url: str) -> str:
+    """
+    自动适配异步驱动：
+    - Railway/Heroku 给的是 postgresql:// 或 postgres://，异步需要 postgresql+asyncpg://
+    - 本地 sqlite 已经是 sqlite+aiosqlite://，保持不变
+    """
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+engine = create_async_engine(_normalize_db_url(settings.DATABASE_URL), echo=False)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
