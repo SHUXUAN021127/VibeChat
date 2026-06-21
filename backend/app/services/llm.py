@@ -32,6 +32,8 @@ EMOTION_PROMPT = """你是一个专业的情绪分析师。请分析以下用户
 - 愤怒/烦躁：#f87171（红色）
 - 期待/好奇：#fb923c（橙色）
 - 复杂/矛盾：#94a3b8（灰蓝）
+
+重要：请用一致、确定的标准判断。对于相同或高度相似的输入，应给出相同的主情绪标签、正负向和强度，避免随意波动。优先选择最贴切、最稳定的判断。
 """
 
 async def analyze_emotion(text: str) -> dict:
@@ -47,7 +49,8 @@ async def _analyze_with_openai(text: str) -> dict:
     response = await client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=[{"role": "user", "content": EMOTION_PROMPT.format(text=text)}],
-        temperature=0.3,
+        temperature=0,      # 0 = 最确定，相同输入尽量给相同判断
+        seed=42,            # 固定种子，进一步提升可复现性
         max_tokens=500,
     )
     raw = response.choices[0].message.content.strip()
@@ -59,6 +62,7 @@ async def _analyze_with_anthropic(text: str) -> dict:
     response = await client.messages.create(
         model=settings.ANTHROPIC_MODEL,
         max_tokens=500,
+        temperature=0,      # 0 = 最确定
         messages=[{"role": "user", "content": EMOTION_PROMPT.format(text=text)}],
     )
     raw = response.content[0].text.strip()
