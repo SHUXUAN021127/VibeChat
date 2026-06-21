@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Env (重要：不要提交密钥)
+.env
+.env.local
+frontend/.env.local
+
+# Node
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
