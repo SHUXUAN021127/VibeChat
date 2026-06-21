@@ -100,13 +100,13 @@ export default function MatchPage() {
         if (s.status === 'active') {
           clearInterval(pollingRef.current)
           clearInterval(countdownRef.current)
-          setStatus(s.participant_count > 1 ? 'matched' : 'solo')
+          setStatus('matched')
           setTimeout(() => router.push(`/chat/${roomCode}`), 1500)
         }
         if (s.timed_out) {
           clearInterval(pollingRef.current)
           clearInterval(countdownRef.current)
-          setStatus('solo')
+          setStatus('matched')
           setTimeout(() => router.push(`/chat/${roomCode}`), 1500)
         }
       } catch {}
@@ -257,19 +257,37 @@ export default function MatchPage() {
 
         {/* 情绪可视化卡片 */}
         <div className="glass rounded-3xl p-8 mb-6">
-          {/* 情绪光环 */}
-          <div className="relative flex items-center justify-center mb-6">
+          {/* 情绪光环 - 升级版 */}
+          <div className="relative flex items-center justify-center mb-6" style={{ height: '140px' }}>
+            {/* 外层呼吸光晕 */}
             <div
-              className="absolute w-32 h-32 rounded-full opacity-20 animate-pulse-slow"
-              style={{ background: color, filter: 'blur(20px)' }}
+              className="absolute w-36 h-36 rounded-full animate-breathe"
+              style={{ background: `radial-gradient(circle, ${color}55, transparent 70%)`, filter: 'blur(12px)' }}
             />
+            {/* 扩散波纹 */}
+            <div className="absolute w-28 h-28 rounded-full opacity-30 animate-ripple" style={{ border: `2px solid ${color}` }} />
+            <div className="absolute w-28 h-28 rounded-full opacity-20 animate-ripple" style={{ border: `1px solid ${color}`, animationDelay: '0.75s' }} />
+
+            {/* 轨道光点 */}
+            {[0, 1, 2].map(i => (
+              <div key={i} className="absolute" style={{
+                width: '8px', height: '8px',
+                ['--orbit-r' as any]: `${48 + i * 8}px`,
+                ['--orbit-speed' as any]: `${6 + i * 2}s`,
+              }}>
+                <div className="animate-orbit" style={{
+                  ['--orbit-r' as any]: `${48 + i * 8}px`,
+                  ['--orbit-speed' as any]: `${6 + i * 2}s`,
+                }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                </div>
+              </div>
+            ))}
+
+            {/* 中心核心 */}
             <div
-              className="absolute w-24 h-24 rounded-full opacity-30 animate-ripple"
-              style={{ border: `2px solid ${color}` }}
-            />
-            <div
-              className="relative w-20 h-20 rounded-full flex items-center justify-center text-3xl"
-              style={{ background: `${color}22`, border: `2px solid ${color}66` }}
+              className="relative w-20 h-20 rounded-full flex items-center justify-center text-3xl animate-breathe"
+              style={{ background: `${color}22`, border: `2px solid ${color}88`, boxShadow: `0 0 24px ${color}66` }}
             >
               {status === 'matched' ? '✨' : status === 'solo' ? '🌙' : '🫧'}
             </div>
@@ -296,6 +314,25 @@ export default function MatchPage() {
                   {kw}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* 多维度情绪：次要情绪占比 */}
+          {emotion.secondary_emotions?.length > 0 && (
+            <div className="mb-4 text-left">
+              <div className="text-xs text-white/30 mb-2 text-center">你的情绪里还藏着</div>
+              <div className="space-y-1.5">
+                {emotion.secondary_emotions.map((se, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-xs text-white/50 w-12 flex-shrink-0">{se.label}</span>
+                    <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.round(se.weight * 100)}%`, background: `${color}99` }} />
+                    </div>
+                    <span className="text-xs text-white/30 w-8 text-right">{Math.round(se.weight * 100)}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

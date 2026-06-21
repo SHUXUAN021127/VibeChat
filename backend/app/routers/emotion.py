@@ -24,6 +24,7 @@ class AnalyzeResponse(BaseModel):
     emotion_score: float
     emotion_valence: float
     emotion_keywords: list[str]
+    secondary_emotions: list[dict] = []
     emotion_color: str
     emotion_summary: str
     opening_line: str
@@ -70,6 +71,7 @@ async def analyze(req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
         emotion_score=float(emotion["emotion_score"]),
         emotion_valence=float(emotion["emotion_valence"]),
         emotion_keywords=json.dumps(emotion["emotion_keywords"], ensure_ascii=False),
+        secondary_emotions=json.dumps(emotion.get("secondary_emotions", []), ensure_ascii=False),
         emotion_color=emotion["emotion_color"],
         emotion_summary=emotion["emotion_summary"],
     )
@@ -90,6 +92,7 @@ async def analyze(req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
             emotion_score=emotion["emotion_score"],
             emotion_valence=emotion["emotion_valence"],
             emotion_keywords=emotion["emotion_keywords"],
+            secondary_emotions=emotion.get("secondary_emotions", []),
             emotion_color=emotion["emotion_color"],
             emotion_summary=emotion["emotion_summary"],
             opening_line=emotion.get("opening_line", ""),
@@ -125,6 +128,7 @@ async def analyze(req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
         emotion_score=emotion["emotion_score"],
         emotion_valence=emotion["emotion_valence"],
         emotion_keywords=emotion["emotion_keywords"],
+        secondary_emotions=emotion.get("secondary_emotions", []),
         emotion_color=emotion["emotion_color"],
         emotion_summary=emotion["emotion_summary"],
         opening_line=emotion.get("opening_line", ""),

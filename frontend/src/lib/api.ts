@@ -10,6 +10,7 @@ export interface EmotionResult {
   emotion_score: number
   emotion_valence: number
   emotion_keywords: string[]
+  secondary_emotions: { label: string; weight: number }[]
   emotion_color: string
   emotion_summary: string
   opening_line: string

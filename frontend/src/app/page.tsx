@@ -21,6 +21,7 @@ export default function HomePage() {
   )
   const [chatMode, setChatMode] = useState<'one_on_one' | 'group'>('one_on_one')
   const [account, setAccount] = useState<any>(null)
+  const [showGuide, setShowGuide] = useState(false)
 
   useEffect(() => {
     const acc = localStorage.getItem('vibe_account')
@@ -66,6 +67,55 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      {/* 使用说明浮层 */}
+      {showGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => setShowGuide(false)}>
+          <div className="glass rounded-3xl p-7 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold gradient-text">VibeChat 使用指南</h2>
+              <button onClick={() => setShowGuide(false)} className="text-white/40 hover:text-white/80 text-xl">×</button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-violet-500/20 text-violet-300 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+                <div>
+                  <div className="text-white/80 font-medium mb-0.5">说出此刻的心情</div>
+                  <div className="text-white/40 text-xs leading-relaxed">输入你现在的感受、状态或想说的话，AI 会分析你的情绪——包括主情绪和藏在背后的多种次要情绪。</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+                <div>
+                  <div className="text-white/80 font-medium mb-0.5">选择聊天方式</div>
+                  <div className="text-white/40 text-xs leading-relaxed">「一对一」匹配一个情绪相近的陌生人深聊；「情绪房间」加入同情绪的多人公共房间。</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-green-500/20 text-green-300 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+                <div>
+                  <div className="text-white/80 font-medium mb-0.5">被理解，然后连接</div>
+                  <div className="text-white/40 text-xs leading-relaxed">系统按情绪相似度匹配。进入对话后，AI 会给一句贴合你们共同情绪的破冰开场白，帮你打开话匣子。</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+                <div>
+                  <div className="text-white/80 font-medium mb-0.5">全程匿名 & 安全</div>
+                  <div className="text-white/40 text-xs leading-relaxed">聊天用系统生成的匿名身份，别人看不到你是谁。登录后可保存情绪轨迹回看。</div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowGuide(false)}
+              className="w-full mt-6 py-3 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-blue-500"
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 背景光效 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl"
@@ -76,7 +126,14 @@ export default function HomePage() {
 
       <div className="w-full max-w-lg relative z-10">
         {/* 账号入口 */}
-        <div className="flex justify-end mb-2">
+        <div className="flex justify-between items-center mb-2">
+          <button
+            onClick={() => setShowGuide(true)}
+            className="flex items-center gap-1 text-white/40 hover:text-white/70 text-sm transition-colors"
+          >
+            <span className="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center text-xs">?</span>
+            使用说明
+          </button>
           {account ? (
             <button
               onClick={() => router.push('/profile')}

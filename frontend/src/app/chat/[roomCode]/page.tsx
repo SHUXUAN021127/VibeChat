@@ -65,6 +65,12 @@ export default function ChatPage() {
         timestamp: m.created_at || m.timestamp,
       }))
       setMessages(hist)
+      // 若破冰语还没生成（对方刚来），稍后再拉一次
+      if (!info.opening_line && info.room_type === 'one_on_one') {
+        setTimeout(() => {
+          getRoomInfo(roomCode, user.user_id).then(info2 => setRoom(info2)).catch(() => {})
+        }, 3000)
+      }
     }).catch(() => {})
 
     // 建立 WebSocket
@@ -330,14 +336,14 @@ export default function ChatPage() {
         </div>
       </header>
 
-      {/* 破冰语 */}
-      {emotion?.opening_line && (
+      {/* 破冰语：优先用双方定制的，否则用单方的 */}
+      {(room?.opening_line || emotion?.opening_line) && (
         <div className="px-4 py-2 text-center">
           <span
-            className="text-xs px-3 py-1 rounded-full"
+            className="text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1"
             style={{ background: `${color}15`, color: `${color}cc` }}
           >
-            💬 {emotion.opening_line}
+            💬 {room?.opening_line || emotion?.opening_line}
           </span>
         </div>
       )}
@@ -387,7 +393,7 @@ export default function ChatPage() {
                   {msg.anonymous_avatar}
                 </div>
               )}
-              <div className={`max-w-[70%] ${isSelf ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+              <div className={`max-w-[78%] sm:max-w-[70%] ${isSelf ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                 {!isSelf && (
                   <span className="text-xs text-white/30 ml-1">{msg.anonymous_name}</span>
                 )}

@@ -1,262 +1,243 @@
 # 🫧 VibeChat — AI 驱动的情绪社交
 
-基于 AI 情绪识别的匿名社交平台。用户输入心情后，AI 分析情绪，自动匹配情绪相近的陌生人进入匿名对话。
+> 先被理解，再去连接。
 
-## 技术栈
+VibeChat 是一款基于 AI 情绪识别的匿名社交应用。用户写下当下的心情，AI 分析其中的情绪色彩，再将情绪状态相近（或互补）的用户自动匹配到同一段匿名对话中。它把"情绪"真正转化成了匹配、对话和体验。
+
+## 🌐 线上演示
+
+- **前端地址**：`https://你的前端.vercel.app`
+- **后端 API**：`https://你的后端.up.railway.app`
+
+> 演示说明：无需注册即可作为游客体验。若想体验历史记录功能，可用邮箱注册或 Google 登录。单人体验时，系统会以 AI 陪聊兜底，可完整跑通对话流程。
+
+---
+
+## ✨ 核心功能
+
+### 情绪识别
+- 用户输入一段心情/状态/想说的话，AI 进行情绪分析
+- 输出**主情绪 + 情绪强度 + 正负向 + 关键词 + 情绪色彩 + 共情解读**
+- **多维度情绪**：识别主情绪之外隐藏的 2~3 个次要情绪及其占比，捕捉复合情绪
+
+### 情绪匹配
+- **相似匹配**：把情绪相近的人匹配到一起，抱团取暖
+- **互补匹配**：把情绪互补的人匹配到一起（如焦虑配平静），互相调节
+- 匹配算法：主情绪为主，结合强度、正负向、**次要情绪重叠度**综合打分
+- **双向确认**（互补模式）：匹配后双方各有一次选择机会，都同意才进入对话
+- **兜底机制**：30 秒未匹配到真人时，由 AI 扮演情绪相近的匿名陌生人陪聊
+
+### 匿名对话
+- 完成匹配后进入实时匿名文本对话（WebSocket）
+- 系统生成匿名昵称和头像，不暴露真实身份
+- **双方定制破冰语**：进入对话时，AI 根据双方共同情绪生成开场白
+- "对方正在输入"实时状态、Emoji 表情、消息时间戳
+- **一对一 / 情绪房间**两种模式：前者深度匹配，后者按情绪进入公共多人房
+
+### 安全与体验
+- **内容审核**：本地敏感词库 + AI 审核双层防线，违规警告，累计 3 次踢出房间
+- **危机干预**：识别极端负面情绪时给出心理援助热线提示
+- **房间生命周期**：闲置 30 秒提示、1分50秒预警、2分钟自动关闭；一方退出则房间解散并通知对方
+- **情绪轨迹**：游客存本地，登录用户存服务器，可回看历史情绪卡片与聊天记录
+
+### 账号体系
+- 邮箱密码注册/登录、Google OAuth 登录（微信/手机号预留接口）
+- 游客模式免登录直接使用
+- 登录与匿名聊天解耦：**无论哪种方式，聊天全程匿名**
+
+---
+
+## 🛠 技术栈
 
 | 层级 | 技术 |
 |------|------|
-| 后端 | Python 3.11 + FastAPI + WebSocket |
-| 前端 | Next.js 14 + TypeScript + Tailwind CSS |
-| 数据库 | SQLite (本地) / PostgreSQL (生产) |
-| AI | OpenAI GPT-4o-mini 或 Anthropic Claude |
+| 后端 | Python 3.13 · FastAPI · WebSocket · SQLAlchemy(异步) |
+| 前端 | Next.js 14 · TypeScript · Tailwind CSS |
+| 数据库 | 本地 SQLite · 生产 PostgreSQL（自动适配 + 自动迁移） |
+| AI | OpenAI / Anthropic 双接口（环境变量切换） |
 | 部署 | 后端 Railway · 前端 Vercel |
 
 ---
 
-## 功能
+## 🚀 本地启动
 
-核心功能（必做）：情绪输入 + AI 分析（标签/强度/正负向/关键词/颜色/解读）、情绪相似度匹配 + 30 秒兜底单人房间、匿名身份 + WebSocket 实时对话、OpenAI/Anthropic 双接口切换、AI 异常降级。
-
-开放发挥（加分）：
-- 🎨 情绪可视化（颜色光环、强度条、关键词）
-- 😊 Emoji 表情选择器
-- ⌨️ "对方正在输入"实时提示
-- 🔄 双匹配模式：相似 / 互补情绪（环境变量切换）
-- 💬 AI 破冰开场白
-- 📈 情绪历史轨迹回顾（本地存储，含走势图）
-- 🆘 极端负面情绪危机求助提示
-- 🛡️ 内容审核：本地词库 + AI 双层，违规警告，累计3次踢出房间
-- 👤 账号体系：邮箱密码 + Google 登录（微信/手机号接口骨架），游客可免登录使用
-- 📚 历史持久化：登录用户的情绪卡片和聊天记录存服务器，可跨设备回看（含时间）
-
-### 账号与登录
-
-- **游客模式**：无需登录直接用，情绪轨迹存本地浏览器
-- **登录模式**：邮箱密码或 Google 登录，情绪卡片和聊天记录存服务器，可在「我的」页面回看
-- **始终匿名**：无论游客还是登录用户，聊天时都用系统生成的临时身份，别人看不到真实账号
-
-Google 登录配置：在 Google Cloud Console 创建 OAuth 客户端，把 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 填入 `.env`，回调地址设为 `{后端地址}/api/account/google/callback`。微信/手机号因需企业资质和短信服务，仅预留接口骨架。
-
-### 内容审核
-
-`ENABLE_AI_MODERATION` 控制是否启用 AI 审核：
-- `true` — 本地词库 + AI 审核（更智能，每条消息多调一次 LLM）
-- `false` — 仅本地词库（快、免费、零延迟）
-
-违规处理：每个房间内累计计数，第 1/2 次警告并拦截消息，第 3 次踢出当前房间（仍可重新匹配）。
-
-### 匹配模式切换
-
-在 `backend/.env` 中通过 `MATCH_MODE` 控制：
-- `similar` — 相似情绪：焦虑配焦虑，抱团取暖
-- `complementary` — 互补情绪：焦虑配平静，互相调节
-
-修改后重启后端生效。
-
----
-
-## 本地启动
-
-### 1. 后端
+### 后端
 
 ```bash
 cd backend
-
-# 创建 Python 虚拟环境
 python -m venv venv
-
-# 激活虚拟环境
-# macOS/Linux:
-source venv/bin/activate
 # Windows:
 venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
 
-# 安装依赖
 pip install -r requirements.txt
-
-# 复制并填写环境变量
-cp .env.example .env
-# 用编辑器打开 .env，填入你的 API Key
-
-# 启动
+cp .env.example .env          # 复制后填入你的 API Key
 uvicorn app.main:app --reload --port 8000
 ```
 
-后端启动后访问 http://localhost:8000 可看到 `{"status":"ok"}`
-API 文档：http://localhost:8000/docs
+后端启动后：
+- 健康检查：http://localhost:8000/health
+- API 文档：http://localhost:8000/docs
 
-### 2. 前端
+### 前端
 
 ```bash
 cd frontend
-
-# 安装依赖
 npm install
-
-# 复制环境变量
-cp .env.local.example .env.local
-# 本地开发不需要修改，默认指向 localhost:8000
-
-# 启动
+cp .env.local.example .env.local   # 本地默认指向 localhost:8000，无需修改
 npm run dev
 ```
 
-前端启动后访问 http://localhost:3000
+访问 http://localhost:3000
 
 ---
 
-## LLM 配置说明
+## 🔑 LLM 配置（OpenAI / Anthropic 切换）
 
-### 使用 OpenAI（默认）
+在 `backend/.env` 中通过 `LLM_PROVIDER` 切换，两种接口输出格式一致：
 
-在 `backend/.env` 中：
-
+**使用 OpenAI：**
 ```env
 LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-你的OpenAI密钥
+OPENAI_API_KEY=sk-你的密钥
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 使用 Anthropic Claude
-
-在 `backend/.env` 中：
-
+**使用 Anthropic：**
 ```env
 LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-你的Anthropic密钥
+ANTHROPIC_API_KEY=sk-ant-你的密钥
 ANTHROPIC_MODEL=claude-sonnet-4-6
 ```
 
-**切换方式**：只需修改 `LLM_PROVIDER` 的值，重启后端即可。两种接口使用完全相同的 Prompt，输出格式一致。
+修改后重启后端生效。
+
+### 其他可配置项
+
+```env
+MATCH_MODE=similar              # similar 相似匹配 / complementary 互补匹配
+ENABLE_AI_MODERATION=true       # 是否启用 AI 内容审核
+SECRET_KEY=你的密钥串            # JWT 签名密钥
+# Google 登录（可选）
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/account/google/callback
+```
 
 ---
 
-## 部署到公网（详细教程）
+## ☁️ 部署到公网
 
-### 第一步：准备 GitHub 仓库
-
-1. 打开 https://github.com，注册账号（已有跳过）
-2. 点右上角 **+** → **New repository**
-3. 仓库名填 `vibechat`，选 **Private**，点 **Create repository**
-4. 在你电脑的终端里：
+### 1. 推送代码到 GitHub
 
 ```bash
-cd /你的项目路径/vibechat
 git init
 git add .
-git commit -m "init"
+git commit -m "VibeChat"
 git remote add origin https://github.com/你的用户名/vibechat.git
 git push -u origin main
 ```
 
----
+### 2. 部署后端到 Railway
 
-### 第二步：部署后端到 Railway
+1. https://railway.app → Login with GitHub → New Project → Deploy from GitHub repo → 选择仓库
+2. 进入服务 Settings：
+   - **Root Directory** 填 `backend`
+   - **Start Command** 填 `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+3. 添加 PostgreSQL：项目内 New → Database → Add PostgreSQL
+4. 在服务 Variables 添加环境变量：
+   ```
+   LLM_PROVIDER=openai
+   OPENAI_API_KEY=你的密钥
+   OPENAI_MODEL=gpt-4o-mini
+   SECRET_KEY=随机字符串
+   ENABLE_AI_MODERATION=true
+   MATCH_MODE=similar
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
+   FRONTEND_URL=（前端部署后回填）
+   ```
+5. Settings → Networking → Generate Domain，得到后端公网地址
 
-1. 打开 https://railway.app，点 **Login with GitHub** 登录
-2. 点 **New Project** → **Deploy from GitHub repo**
-3. 选择刚才创建的 `vibechat` 仓库
-4. Railway 会自动检测到两个目录，选择 **backend** 文件夹
+> 代码会自动把 `postgresql://` 转成异步驱动并自动迁移数据库表结构，无需手动建表。
 
-**配置环境变量**（Railway 控制台 → Variables 标签页）：
+### 3. 部署前端到 Vercel
 
-```
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-你的key
-OPENAI_MODEL=gpt-4o-mini
-SECRET_KEY=随机生成一个字符串
-DATABASE_URL=sqlite+aiosqlite:///./vibechat.db
-FRONTEND_URL=https://你的前端地址.vercel.app
-```
+1. https://vercel.com → 导入同一个 GitHub 仓库
+2. **Root Directory** 设为 `frontend`
+3. 添加环境变量（填你的后端地址）：
+   ```
+   NEXT_PUBLIC_API_URL=https://你的后端.up.railway.app
+   NEXT_PUBLIC_WS_URL=wss://你的后端.up.railway.app
+   ```
+   > 注意 WS 用 `wss://`（加密）
+4. Deploy，得到前端公网地址
 
-**配置启动命令**（Settings 标签页 → Start Command）：
+### 4. 回填 FRONTEND_URL
 
-```
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-5. 点 **Deploy**，等待部署完成（约 2 分钟）
-6. 在 Settings → Networking → Generate Domain，获得后端域名，例如：
-   `https://vibechat-backend.railway.app`
-
----
-
-### 第三步：部署前端到 Vercel
-
-1. 打开 https://vercel.com，点 **Login with GitHub** 登录
-2. 点 **Add New Project** → 选择 `vibechat` 仓库
-3. 重要：**Root Directory** 改为 `frontend`
-4. 点 **Environment Variables**，添加：
-
-```
-NEXT_PUBLIC_API_URL=https://vibechat-backend.railway.app
-NEXT_PUBLIC_WS_URL=wss://vibechat-backend.railway.app
-```
-
-5. 点 **Deploy**，等待约 1 分钟
-6. 获得前端域名，例如：`https://vibechat.vercel.app`
+回到 Railway，把 `FRONTEND_URL` 设为你的 Vercel 前端地址（结尾不加斜杠），保存后自动重新部署。
 
 ---
 
-### 第四步：更新后端 CORS 配置
+## 🧪 演示测试方法
 
-回到 Railway 控制台，把 `FRONTEND_URL` 改为你的 Vercel 域名：
-
-```
-FRONTEND_URL=https://vibechat.vercel.app
-```
-
-Railway 会自动重新部署。
+- **单人体验**：直接输入情绪提交，30 秒后由 AI 陪聊兜底，可完整体验对话
+- **双人匹配**：用普通窗口 + 无痕窗口（隔离身份）各提交一次相近情绪，会匹配到同一房间
+- **互补匹配**：将 `MATCH_MODE` 设为 `complementary`，一方输入负面情绪、一方输入正面情绪，体验双向确认
+- **历史记录**：注册/登录后聊天，在「我的」页面回看情绪卡片与聊天记录
 
 ---
 
-### 演示测试方法
-
-赛题要求可以 mock 多用户测试聊天：
-
-1. 用普通浏览器打开 https://你的域名.vercel.app，输入一段心情提交
-2. 用**无痕/隐私模式**再开一个窗口，输入情绪相近的文字提交
-3. 两个用户会被匹配到同一房间，可以互相聊天
-
----
-
-## 项目结构
+## 📁 项目结构
 
 ```
 vibechat/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py            # FastAPI 入口
+│   │   ├── main.py            # FastAPI 入口 + 后台清理任务
 │   │   ├── config.py          # 环境变量配置
-│   │   ├── models.py          # 数据库模型
+│   │   ├── models.py          # 数据模型 + 自动迁移
 │   │   ├── routers/
-│   │   │   ├── emotion.py     # 情绪分析 API
-│   │   │   ├── match.py       # 匹配 & 房间 API
-│   │   │   └── chat.py        # WebSocket 聊天
+│   │   │   ├── emotion.py     # 情绪分析 + 匹配入口
+│   │   │   ├── match.py       # 匹配状态 / 房间 / 互补确认
+│   │   │   ├── chat.py        # WebSocket 实时聊天 + AI 陪聊
+│   │   │   └── account.py     # 账号认证 + 历史记录
 │   │   └── services/
-│   │       ├── llm.py         # LLM 调用（OpenAI/Anthropic）
+│   │       ├── llm.py         # LLM 情绪分析（双接口）
 │   │       ├── matching.py    # 情绪匹配算法
-│   │       └── auth.py        # 匿名身份管理
-│   ├── requirements.txt
-│   └── .env.example
+│   │       ├── pending.py     # 互补确认状态机 + 在线追踪
+│   │       ├── companion.py   # AI 陪聊
+│   │       ├── icebreaker.py  # 双方定制破冰语
+│   │       ├── moderation.py  # 内容审核
+│   │       └── account.py     # 账号 / JWT
+│   └── requirements.txt
 │
 └── frontend/
-    ├── src/app/
-    │   ├── page.tsx           # 首页：情绪输入
-    │   ├── match/[roomCode]/  # 匹配等待页
-    │   └── chat/[roomCode]/   # 匿名聊天页
-    ├── src/lib/
-    │   └── api.ts             # API 客户端
-    └── .env.local.example
+    └── src/
+        ├── app/
+        │   ├── page.tsx              # 首页：情绪输入 + 模式选择 + 使用指引
+        │   ├── login/               # 登录注册
+        │   ├── auth/callback/        # Google 回调
+        │   ├── profile/             # 个人中心：情绪卡片 + 聊天记录
+        │   ├── match/[roomCode]/    # 匹配等待 + 互补确认 + 情绪可视化
+        │   └── chat/[roomCode]/     # 匿名实时聊天
+        └── lib/api.ts               # API 客户端
 ```
 
-## API 文档
+---
 
-启动后端后访问：http://localhost:8000/docs（Swagger 自动文档）
+## 📡 主要 API
 
-主要接口：
-- `POST /api/emotion/analyze` — 情绪分析 + 自动匹配
-- `GET /api/match/status/{room_code}` — 轮询匹配状态
-- `GET /api/match/room/{room_code}` — 获取房间信息
-- `WS /ws/chat/{room_code}` — WebSocket 实时聊天
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/emotion/analyze` | 情绪分析 + 自动匹配 |
+| POST | `/api/emotion/rematch` | 复用情绪重新匹配 |
+| GET | `/api/match/status/{room_code}` | 轮询匹配状态 |
+| GET | `/api/match/room/{room_code}` | 房间信息 + 破冰语 |
+| GET/POST | `/api/match/confirm/*` | 互补模式双向确认 |
+| WS | `/ws/chat/{room_code}` | WebSocket 实时聊天 |
+| POST | `/api/account/register` `/login` | 邮箱注册 / 登录 |
+| GET | `/api/account/google/login` | Google 登录 |
+| GET | `/api/account/history/*` | 情绪卡片 / 聊天记录 |
+
+完整交互式文档见后端 `/docs`。

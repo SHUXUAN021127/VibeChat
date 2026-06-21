@@ -27,12 +27,21 @@ def generate_anonymous_identity():
     avatar = random.choice(AVATARS)
     return name, avatar
 
+def _parse_secondary(record):
+    """解析次要情绪 JSON"""
+    import json
+    try:
+        data = json.loads(record.secondary_emotions or "[]")
+        return {item["label"]: float(item.get("weight", 0)) for item in data if "label" in item}
+    except Exception:
+        return {}
+
 def emotion_similarity(record_a: EmotionRecord, record_b: EmotionRecord) -> float:
     """
     计算两个情绪记录的相似度（0~1）
-    综合考虑：情绪标签、强度、正负向
+    主情绪为主，次要情绪做微调
     """
-    # 1. 标签相同加权
+    # 1. 主情绪标签相同加权
     label_score = 1.0 if record_a.emotion_label == record_b.emotion_label else 0.0
 
     # 2. 情绪强度相似度（差值越小越相似）
@@ -43,8 +52,25 @@ def emotion_similarity(record_a: EmotionRecord, record_b: EmotionRecord) -> floa
     valence_diff = abs(record_a.emotion_valence - record_b.emotion_valence) / 2.0
     valence_score = 1.0 - valence_diff
 
-    # 加权综合
-    similarity = label_score * 0.5 + intensity_score * 0.3 + valence_score * 0.2
+    # 4. 次要情绪重叠度（微调项）：两人共享的次要情绪越多越相似
+    sec_a = _parse_secondary(record_a)
+    sec_b = _parse_secondary(record_b)
+    # 主情绪也纳入对方次要情绪的考量（你的主情绪是对方的次要情绪也算共鸣）
+    sec_a[record_a.emotion_label] = 1.0
+    sec_b[record_b.emotion_label] = 1.0
+    shared = set(sec_a.keys()) & set(sec_b.keys())
+    if shared:
+        overlap_score = sum(min(sec_a[k], sec_b[k]) for k in shared) / max(len(sec_a), len(sec_b))
+    else:
+        overlap_score = 0.0
+
+    # 加权综合：主情绪 0.4 + 强度 0.2 + 正负向 0.15 + 次要情绪重叠 0.25
+    similarity = (
+        label_score * 0.4 +
+        intensity_score * 0.2 +
+        valence_score * 0.15 +
+        overlap_score * 0.25
+    )
     return similarity
 
 def emotion_complement(record_a: EmotionRecord, record_b: EmotionRecord) -> float:
@@ -219,11 +245,12 @@ async def confirm_and_create_room(pair, db: AsyncSession) -> Match:
 
 
 async def activate_solo_match(match_id: int, db: AsyncSession) -> Match:
-    """超时后将等待房间转为单人活跃房间（兜底）"""
+    """超时后将等待房间转为 AI 陪聊房间（兜底，单人也能完整体验）"""
     result = await db.execute(select(Match).where(Match.id == match_id))
     match = result.scalar_one_or_none()
     if match and match.status == "waiting":
         match.status = "active"
+        match.is_ai_companion = True  # 标记为 AI 陪聊
         await db.commit()
         await db.refresh(match)
     return match

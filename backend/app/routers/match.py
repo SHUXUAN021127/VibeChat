@@ -99,9 +99,25 @@ async def get_room_info(
     first_record = part_result.scalar_one_or_none()
 
     participant_result = await db.execute(
-        select(EmotionRecord).where(EmotionRecord.match_id == match.id)
+        select(EmotionRecord).where(EmotionRecord.match_id == match.id).order_by(EmotionRecord.id.asc())
     )
-    participant_count = len(participant_result.scalars().all())
+    participants = participant_result.scalars().all()
+    participant_count = len(participants)
+
+    # 破冰语：1对1 且双方都在时，生成双方定制开场白（生成一次后缓存）
+    opening = first_record.emotion_summary if first_record else ""
+    if match.room_type == "one_on_one" and participant_count >= 2:
+        if not match.icebreaker:
+            from app.services.icebreaker import generate_icebreaker
+            ice = await generate_icebreaker(
+                participants[0].emotion_label,
+                participants[1].emotion_label,
+            )
+            match.icebreaker = ice
+            await db.commit()
+        opening = match.icebreaker
+    elif match.icebreaker:
+        opening = match.icebreaker
 
     return RoomInfoResponse(
         room_code=match.room_code,
@@ -121,7 +137,7 @@ async def get_room_info(
             )
             for m in messages
         ],
-        opening_line=first_record.emotion_summary if first_record else "",
+        opening_line=opening,
     )
 
 

@@ -54,6 +54,7 @@ class EmotionRecord(Base):
     emotion_score = Column(Float, nullable=False)         # 情绪强度 0~1
     emotion_valence = Column(Float, nullable=False)       # 正负向 -1~1
     emotion_keywords = Column(String, nullable=False)     # 关键词 JSON
+    secondary_emotions = Column(String, default="[]")     # 次要情绪 JSON [{label, weight}]
     emotion_color = Column(String, nullable=False)        # 情绪颜色 hex
     emotion_summary = Column(Text, nullable=False)        # AI 解读摘要
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -73,6 +74,8 @@ class Match(Base):
     emotion_color = Column(String, nullable=False)        # 房间颜色
     created_at = Column(DateTime, default=datetime.utcnow)
     last_activity = Column(DateTime, default=datetime.utcnow)  # 最后活跃时间（闲置判断）
+    icebreaker = Column(Text, nullable=True)              # 双方定制破冰语
+    is_ai_companion = Column(Boolean, default=False)      # 是否为 AI 陪聊房间
     ended_at = Column(DateTime, nullable=True)
 
     participants = relationship("EmotionRecord", back_populates="match")
@@ -93,6 +96,26 @@ class Message(Base):
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # 轻量迁移：为已存在的表补充新增列（兼容 SQLite 和 PostgreSQL）
+        await _safe_migrate(conn)
+
+async def _safe_migrate(conn):
+    """给旧表补充新列，列已存在时忽略错误"""
+    from sqlalchemy import text
+    migrations = [
+        "ALTER TABLE emotion_records ADD COLUMN secondary_emotions TEXT DEFAULT '[]'",
+        "ALTER TABLE emotion_records ADD COLUMN account_id INTEGER",
+        "ALTER TABLE matches ADD COLUMN room_type VARCHAR DEFAULT 'one_on_one'",
+        "ALTER TABLE matches ADD COLUMN last_activity TIMESTAMP",
+        "ALTER TABLE matches ADD COLUMN icebreaker TEXT",
+        "ALTER TABLE matches ADD COLUMN is_ai_companion BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN account_id INTEGER",
+    ]
+    for sql in migrations:
+        try:
+            await conn.execute(text(sql))
+        except Exception:
+            pass  # 列已存在，忽略
 
 async def get_db():
     async with AsyncSessionLocal() as session:
